@@ -16,7 +16,6 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
 
 
-@jit
 def fit_ada_boost(features, labels, reg=False):
     param_dist = {
         'n_estimators': [50, 100, 300, 1000, 1500, 2000],

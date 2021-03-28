@@ -32,8 +32,6 @@ Basic flow; for each training file:
 - write to csv
 '''
 
-
-@jit
 def transform_date(date_time_str):
     index = date_time_str.rindex(":")
     date_time_str = date_time_str[:index]
@@ -42,9 +40,14 @@ def transform_date(date_time_str):
     return int(ts - start_date_ts) / 60
 
 
+def get_date_time():
+    now = datetime.now()
+    return now.strftime("%d/%m/%Y %H:%M:%S")
+
+
 for file in data_files:
     file_name = "data/" + file + training_suffix
-    print("Working on: " + file_name)
+    print("Working on: " + file_name + " - started at " + get_date_time())
     data = pd.read_csv(file_name)
     target = data[target_column]
     data.drop(target_column, inplace=True, axis=1)
@@ -59,5 +62,6 @@ for file in data_files:
     results = pd.DataFrame()
     results[id_column] = test_data[id_column]
     test_data.drop(id_column, inplace=True, axis=1)
+    test_data[date_column] = test_data[date_column].apply(transform_date)
     results[target_column] = ada.predict(test_data)
-    results.to_csv(file + "results")
+    results.to_csv(file + "results - at " + get_date_time())
