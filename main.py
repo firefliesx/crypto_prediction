@@ -32,6 +32,7 @@ Basic flow; for each training file:
 - write to csv
 '''
 
+
 def transform_date(date_time_str):
     index = date_time_str.rindex(":")
     date_time_str = date_time_str[:index]
@@ -64,4 +65,5 @@ for file in data_files:
     test_data.drop(id_column, inplace=True, axis=1)
     test_data[date_column] = test_data[date_column].apply(transform_date)
     results[target_column] = ada.predict(test_data)
-    results.to_csv(file + "results - at " + get_date_time())
+    results.to_csv(file + "results")
+    print("end time: " + get_date_time())
