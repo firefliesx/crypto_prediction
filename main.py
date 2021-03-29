@@ -15,7 +15,7 @@ id_column = "id"
 date_column = "time"
 name_column = "name"
 date_time_format = "%Y-%m-%dT%H:%M"
-start_date_ts = time.mktime(datetime.strptime("2018-05-04T08:12", date_time_format).timetuple())
+start_date_ts = time.mktime(datetime.strptime("2020-07-01T00:00", date_time_format).timetuple())
 
 data_files = set()
 
@@ -46,16 +46,28 @@ def get_date_time():
     return now.strftime("%d/%m/%Y %H:%M:%S")
 
 
+def normalize(df):
+    result = df.copy()
+    for feature_name in df.columns:
+        if feature_name != name_column and feature_name != id_column and feature_name != date_column and feature_name != target_column:
+            max_value = df[feature_name].max()
+            min_value = df[feature_name].min()
+            result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
+    return result
+
+
 for file in data_files:
     file_name = "data/" + file + training_suffix
     print("Working on: " + file_name + " - started at " + get_date_time())
     data = pd.read_csv(file_name)
+    data[date_column] = data[date_column].apply(transform_date)
+    data = data[(data[date_column] > 0)]
     target = data[target_column]
     data.drop(target_column, inplace=True, axis=1)
     data.drop(id_column, inplace=True, axis=1)
     data.drop(name_column, inplace=True, axis=1)
-    data[date_column] = data[date_column].apply(transform_date)
-    ada = md.fit_ada_boost(data, target, True)
+    normalized_data = normalize(data)
+    ada = md.fit_ada_boost(normalized_data, target, True)
 
     print(ada)
     test_data = pd.read_csv("data/" + file + test_suffix)
@@ -64,6 +76,7 @@ for file in data_files:
     results[id_column] = test_data[id_column]
     test_data.drop(id_column, inplace=True, axis=1)
     test_data[date_column] = test_data[date_column].apply(transform_date)
-    results[target_column] = ada.predict(test_data)
+    normalized_test_data = normalize(test_data)
+    results[target_column] = ada.predict(normalized_test_data)
     results.to_csv(file + "results")
     print("end time: " + get_date_time())

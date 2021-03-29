@@ -18,17 +18,12 @@ from sklearn.linear_model import LogisticRegression
 
 def fit_ada_boost(features, labels, reg=False):
     param_dist = {
-        'n_estimators': [300, 1000, 1500],
-        'learning_rate': [0.05, 0.1, 0.3],
+        'n_estimators': [50, 100, 1000],
+        'learning_rate': [0.1, 0.3, 1],
         'loss': ['linear', 'square', 'exponential']
     }
     if reg:
-        param_dist['loss'] = ['linear', 'square', 'exponential']
-        pre_gs_inst = RandomizedSearchCV(AdaBoostRegressor(),
-                                         param_distributions=param_dist,
-                                         cv=3,
-                                         n_iter=8,
-                                         n_jobs=-1)
+        pre_gs_inst = RandomizedSearchCV(AdaBoostRegressor(), param_distributions=param_dist, cv=3, n_iter=4, n_jobs=-1)
     else:
         pre_gs_inst = RandomizedSearchCV(AdaBoostClassifier(),
                                          param_distributions=param_dist,
