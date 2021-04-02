@@ -9,21 +9,63 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV, ShuffleSplit
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
-from statsmodels.tsa.arima_model import ARIMA
-from numba import jit, cuda, vectorize, njit
+#from statsmodels.tsa.arima_model import ARIMA
+#from numba import jit, cuda, vectorize, njit
 from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.feature_selection import RFECV
+import xgboost as xgb
+from xgboost import plot_importance
+import matplotlib.pyplot as plt
 
+def fit_xgboost(X_train,y_train):
+
+    model = xgb.XGBRegressor(
+                        max_depth = 8,n_estimators=80,
+                        min_child_weight=300,colsample_bytree=0.8,
+                        subsample=0.8,eta=0.3,seed=42)
+    return model.fit(X_train,y_train)
+
+
+def xgboost_feature_importance(model):
+    plot_importance(model)
+    plt.show()
+
+def fit_RFECV(features,target):
+    ols = xgb.XGBRegressor()
+    min_features_to_select = 1
+    rfecv = RFECV(estimator=ols, step=1, scoring="neg_mean_squared_error", cv=4, verbose=0, n_jobs=-1,min_features_to_select=min_features_to_select)
+    model = rfecv.fit(features,target)
+    print(rfecv.ranking_)
+    print("Optimal number of features : %d" % rfecv.n_features_)
+
+    return model
+
+
+def fit_varianceThreshold(features):
+    model = VarianceThreshold(threshold=(.8 * (1 - .8)))
+    return model.fit(features)
+
+def fit_PCA(features):
+    model = PCA(n_components=0.99)
+    return model.fit(features)
 
 def fit_ada_boost(features, labels, reg=False):
     param_dist = {
-        'n_estimators': [50, 100, 1000],
-        'learning_rate': [0.1, 0.3, 1],
+        'n_estimators': [300, 1000, 1500],
+        'learning_rate': [0.05, 0.1, 0.3],
         'loss': ['linear', 'square', 'exponential']
     }
     if reg:
-        pre_gs_inst = RandomizedSearchCV(AdaBoostRegressor(), param_distributions=param_dist, cv=3, n_iter=4, n_jobs=-1)
+        param_dist['loss'] = ['linear', 'square', 'exponential']
+        pre_gs_inst = RandomizedSearchCV(AdaBoostRegressor(),
+                                         param_distributions=param_dist,
+                                         cv=3,
+                                         n_iter=8,
+                                         n_jobs=-1)
     else:
         pre_gs_inst = RandomizedSearchCV(AdaBoostClassifier(),
                                          param_distributions=param_dist,
@@ -59,8 +101,8 @@ def fit_random_forest(features, labels, reg=False):
     rf = RandomForestClassifier()
     if reg:
         rf = RandomForestRegressor()
-    model = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=3, verbose=2,
-                               random_state=42,
+    model = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=10, cv=3, verbose=2,
+                               random_state=None,
                                n_jobs=-1)
     # RandomForestRegressor(n_estimators=1000, random_state=42, min_impurity_decrease=5, max_depth=5000)
 
